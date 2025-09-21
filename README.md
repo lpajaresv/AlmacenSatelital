@@ -22,13 +22,20 @@ Sistema moderno y completo para la gestión de inventarios desarrollado con **Py
 
 ## 📋 Instalación y Configuración
 
-### 1. Instalar Dependencias
+### 1. Clonar el Repositorio
+
+```bash
+git clone <url-del-repositorio>
+cd InventarioSatelital
+```
+
+### 2. Instalar Dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Ejecutar la Aplicación
+### 3. Ejecutar la Aplicación
 
 ```bash
 python main.py
@@ -40,9 +47,55 @@ O con uvicorn directamente:
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 3. Acceder al Sistema
+### 4. Acceder al Sistema
 
 Abre tu navegador en: `http://localhost:8000`
+
+## 🔄 Control de Versiones
+
+Este proyecto utiliza Git para el control de versiones. Para trabajar con el código:
+
+### Comandos Básicos de Git
+
+```bash
+# Ver el estado del repositorio
+git status
+
+# Agregar archivos al área de staging
+git add .
+
+# Hacer commit de los cambios
+git commit -m "Descripción del cambio"
+
+# Ver el historial de commits
+git log --oneline
+
+# Crear una nueva rama
+git checkout -b nombre-de-la-rama
+
+# Cambiar a una rama existente
+git checkout nombre-de-la-rama
+
+# Fusionar ramas
+git merge nombre-de-la-rama
+```
+
+### Flujo de Trabajo Recomendado
+
+1. **Crear una rama** para cada nueva funcionalidad
+2. **Hacer commits** frecuentes con mensajes descriptivos
+3. **Probar** los cambios antes de fusionar
+4. **Fusionar** a la rama principal cuando esté listo
+5. **Hacer push** al repositorio remoto regularmente
+
+### Archivos Excluidos
+
+El archivo `.gitignore` excluye automáticamente:
+- Entornos virtuales (`inventario_env/`)
+- Archivos de base de datos (`*.db`)
+- Archivos de backup (`backups/`)
+- Archivos temporales y de sistema
+- Archivos de configuración local (`.env`)
 
 ## 📊 Estructura del Proyecto
 
