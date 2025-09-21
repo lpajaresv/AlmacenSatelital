@@ -1,0 +1,155 @@
+# 📦 Sistema de Control de Inventario
+
+Sistema moderno y completo para la gestión de inventarios desarrollado con **Python FastAPI**.
+
+## 🚀 Características
+
+- ✅ **Gestión de Productos**: Registro completo con código, nombre, unidad y grupo
+- ✅ **Control de Movimientos**: Entradas y salidas de inventario con seguimiento detallado
+- ✅ **Kardex por Producto**: Historial completo con saldos progresivos
+- ✅ **Filtros por Fechas**: Consultas específicas por rangos de tiempo
+- ✅ **Dashboard Interactivo**: Resúmenes y estadísticas en tiempo real
+- ✅ **Interfaz Moderna**: Diseño responsive y amigable
+- ✅ **Base de Datos SQLite**: Fácil configuración y portabilidad
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Backend**: FastAPI (Python)
+- **Base de Datos**: SQLite con SQLAlchemy ORM
+- **Frontend**: HTML5, CSS3, JavaScript vanilla
+- **Templating**: Jinja2
+- **Estilos**: CSS Grid, Flexbox, Gradientes modernos
+
+## 📋 Instalación y Configuración
+
+### 1. Instalar Dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Ejecutar la Aplicación
+
+```bash
+python main.py
+```
+
+O con uvicorn directamente:
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 3. Acceder al Sistema
+
+Abre tu navegador en: `http://localhost:8000`
+
+## 📊 Estructura del Proyecto
+
+```
+inventario/
+├── main.py              # Aplicación principal FastAPI
+├── database.py          # Configuración de base de datos
+├── models.py            # Modelos SQLAlchemy
+├── schemas.py           # Esquemas Pydantic
+├── requirements.txt     # Dependencias Python
+├── inventario.db        # Base de datos SQLite (se crea automáticamente)
+├── templates/           # Plantillas HTML
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── productos.html
+│   ├── movimientos.html
+│   └── kardex.html
+└── static/
+    └── style.css        # Estilos CSS
+```
+
+## 🎯 Funcionalidades Principales
+
+### 1. Dashboard Principal
+- Resumen de productos registrados
+- Total de unidades en stock
+- Movimientos recientes
+- Accesos rápidos
+
+### 2. Gestión de Productos
+- Registro de nuevos productos
+- Lista completa con stock actual
+- Códigos únicos por producto
+- Categorización por grupos
+
+### 3. Control de Movimientos
+- Entradas y salidas de inventario
+- Filtros por producto y fechas
+- Descripción detallada de cada movimiento
+- Validaciones automáticas
+
+### 4. Kardex de Productos
+- Historial completo por producto
+- Saldos progresivos
+- Filtros por rango de fechas
+- Visualización clara de entradas/salidas
+
+## 🔧 Uso del Sistema
+
+### Registrar un Producto
+1. Ve a la sección "Productos"
+2. Completa el formulario con código, nombre, unidad y grupo
+3. Haz clic en "Guardar Producto"
+
+### Registrar Movimientos
+1. Ve a la sección "Movimientos"
+2. Selecciona el producto
+3. Elige tipo (Entrada/Salida)
+4. Ingresa cantidad y descripción
+5. Confirma la fecha y guarda
+
+### Consultar Kardex
+1. Desde "Productos" o "Movimientos", haz clic en "Ver Kardex"
+2. Usa los filtros de fecha si necesitas un período específico
+3. Revisa el historial completo con saldos
+
+## 🎨 Diseño y UX
+
+- **Responsive Design**: Funciona en desktop, tablet y móvil
+- **Colores Modernos**: Gradientes y paleta profesional
+- **Iconos Descriptivos**: Emojis para mejor usabilidad
+- **Navegación Intuitiva**: Menú claro y accesos rápidos
+- **Feedback Visual**: Estados de carga, confirmaciones y validaciones
+
+## 🔒 Consideraciones de Seguridad
+
+- Validación de datos en frontend y backend
+- Códigos únicos para productos
+- Prevención de movimientos negativos no válidos
+- Sanitización de inputs
+
+## 📈 Posibles Mejoras Futuras
+
+- [ ] Autenticación y roles de usuario
+- [ ] Reportes en PDF/Excel
+- [ ] Códigos de barras/QR
+- [ ] Alertas de stock mínimo
+- [ ] API REST completa
+- [ ] Integración con sistemas externos
+- [ ] Backup automático
+- [ ] Auditoría de cambios
+
+## 🤝 Contribuir
+
+Este es un proyecto base que puedes expandir según tus necesidades:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature
+3. Realiza tus cambios
+4. Envía un pull request
+
+## 📄 Licencia
+
+Proyecto de código abierto para uso educativo y comercial.
+
+---
+
+**¿Necesitas ayuda?** Revisa la documentación o contacta al desarrollador.
+
+¡Disfruta gestionando tu inventario de manera moderna y eficiente! 🚀

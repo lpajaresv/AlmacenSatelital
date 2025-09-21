@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Almacén Satelital - San Luis{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', path='/favicon.ico') }}">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <img src="{{ url_for('static', path='/caral-logo.png') }}" alt="San Luis" class="logo">
+            </div>
+            <h1>Almacén Satelital</h1>
+            <p>San Luis</p>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li><a href="/" {% if request.url.path == "/" %}class="active"{% endif %}>
+                <span class="icon">🏠</span>
+                <span class="text">Dashboard</span>
+            </a></li>
+            <li><a href="/productos" {% if "/productos" in request.url.path %}class="active"{% endif %}>
+                <span class="icon">📋</span>
+                <span class="text">Productos</span>
+            </a></li>
+            <li><a href="/movimientos" {% if "/movimientos" in request.url.path %}class="active"{% endif %}>
+                <span class="icon">📊</span>
+                <span class="text">Movimientos</span>
+            </a></li>
+            <li><a href="/grupos" {% if "/grupos" in request.url.path %}class="active"{% endif %}>
+                <span class="icon">🏷️</span>
+                <span class="text">Grupos</span>
+            </a></li>
+            <li><a href="/unidades" {% if "/unidades" in request.url.path %}class="active"{% endif %}>
+                <span class="icon">📏</span>
+                <span class="text">Unidades</span>
+            </a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <header class="main-header">
+            <div class="page-title">
+                <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+                <p>{% block page_subtitle %}Panel de control - Almacén Satelital San Luis{% endblock %}</p>
+            </div>
+        </header>
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        // Mobile sidebar toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainHeader = document.querySelector('.main-header');
+            
+            // Crear botón de menú para móvil
+            if (window.innerWidth <= 768) {
+                mainHeader.addEventListener('click', function(e) {
+                    if (e.target === mainHeader || e.target.closest('.page-title')) {
+                        const clickX = e.clientX;
+                        if (clickX <= 60) { // Área del botón hamburguesa
+                            sidebar.classList.toggle('active');
+                        }
+                    }
+                });
+                
+                // Cerrar sidebar al hacer clic en enlaces
+                sidebar.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'A') {
+                        sidebar.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Auto-submit para filtros
+            const filtros = document.querySelectorAll('.auto-submit');
+            filtros.forEach(function(filtro) {
+                filtro.addEventListener('change', function() {
+                    this.form.submit();
+                });
+            });
+        });
+
+        // Función para mostrar confirmaciones
+        function confirmar(mensaje) {
+            return confirm(mensaje);
+        }
+
+        // Función para mostrar el estado de carga
+        function mostrarCarga(elemento) {
+            elemento.innerHTML = '<span class="loading"></span> Procesando...';
+            elemento.disabled = true;
+        }
+
+        // Validación de formularios
+        function validarFormulario(form) {
+            let valido = true;
+            const campos = form.querySelectorAll('input[required], select[required]');
+            
+            campos.forEach(function(campo) {
+                if (!campo.value.trim()) {
+                    campo.style.borderColor = '#ef4444';
+                    valido = false;
+                } else {
+                    campo.style.borderColor = '#e5e7eb';
+                }
+            });
+            
+            return valido;
+        }
+
+        // Formatear números
+        function formatearNumero(numero) {
+            return new Intl.NumberFormat('es-ES', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(numero);
+        }
+    </script>
+</body>
+</html>

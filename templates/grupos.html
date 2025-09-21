@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Grupos - Almacén Satelital San Luis{% endblock %}
+
+{% block page_title %}Grupos{% endblock %}
+{% block page_subtitle %}Clasificación de repuestos y equipos{% endblock %}
+
+{% block content %}
+<!-- Encabezado con botón para nuevo grupo -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>🏷️ Gestión de Grupos</h2>
+        <button onclick="abrirModalGrupo()" class="btn btn-primary">➕ Nuevo Grupo</button>
+    </div>
+</div>
+
+<!-- Modal para registrar nuevo grupo -->
+<div id="modalGrupo" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🏷️ Registrar Nuevo Grupo</h3>
+            <span class="close" onclick="cerrarModalGrupo()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formGrupo" method="post" onsubmit="return validarFormularioGrupo(this)">
+                <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Grupo</label>
+                        <input type="text" id="nombre" name="nombre" class="form-control" required 
+                               placeholder="ej: Electrónicos" maxlength="100">
+                        <small style="color: #6b7280;">Nombre único para identificar el grupo</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion">Descripción (Opcional)</label>
+                        <textarea id="descripcion" name="descripcion" class="form-control" 
+                                  placeholder="ej: Productos electrónicos y tecnológicos" maxlength="500" rows="3"></textarea>
+                        <small style="color: #6b7280;">Descripción opcional del grupo</small>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="activo" name="activo" checked>
+                        <span>Grupo activo (disponible para productos)</span>
+                    </label>
+                </div>
+                <div style="margin-top: 25px; text-align: right;">
+                    <button type="button" onclick="cerrarModalGrupo()" class="btn btn-secondary">❌ Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar Grupo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📋 Lista de Grupos</h3>
+    {% if grupos %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Fecha Creación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grupo in grupos %}
+                <tr class="{% if not grupo.activo %}inactive-row{% endif %}">
+                    <td><strong>{{ grupo.nombre }}</strong></td>
+                    <td>{{ grupo.descripcion or '-' }}</td>
+                    <td>
+                        {% if grupo.activo %}
+                        <span class="badge badge-entrada">✅ Activo</span>
+                        {% else %}
+                        <span class="badge badge-salida">❌ Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ grupo.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <form method="post" action="/grupos/{{ grupo.id }}/toggle" style="display: inline;">
+                            {% if grupo.activo %}
+                            <button type="submit" class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px;"
+                                    onclick="return confirm('¿Desactivar este grupo? Los productos asociados mantendrán la referencia.')">
+                                ❌ Desactivar
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success" style="padding: 5px 10px; font-size: 14px;">
+                                ✅ Activar
+                            </button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No hay grupos registrados aún.</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <button onclick="abrirModalGrupo()" class="btn btn-primary">➕ Crear Primer Grupo</button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Funciones para el modal de grupos
+function abrirModalGrupo() {
+    document.getElementById('modalGrupo').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    setTimeout(() => {
+        document.getElementById('nombre').focus();
+    }, 100);
+}
+
+function cerrarModalGrupo() {
+    document.getElementById('modalGrupo').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar formulario
+    document.getElementById('formGrupo').reset();
+    document.getElementById('activo').checked = true;
+}
+
+// Validación del formulario
+function validarFormularioGrupo(form) {
+    let valido = true;
+    const campos = form.querySelectorAll('input[required]');
+    
+    // Limpiar errores previos
+    campos.forEach(function(campo) {
+        campo.style.borderColor = '#e5e7eb';
+    });
+    
+    // Validar campos requeridos
+    campos.forEach(function(campo) {
+        if (!campo.value.trim()) {
+            campo.style.borderColor = '#ef4444';
+            valido = false;
+        }
+    });
+    
+    // Validación específica del nombre
+    const nombre = form.querySelector('#nombre');
+    if (nombre && nombre.value) {
+        if (nombre.value.length < 2) {
+            nombre.style.borderColor = '#ef4444';
+            alert('El nombre debe tener al menos 2 caracteres');
+            valido = false;
+        }
+        if (nombre.value.length > 100) {
+            nombre.style.borderColor = '#ef4444';
+            alert('El nombre no puede exceder 100 caracteres');
+            valido = false;
+        }
+    }
+    
+    // Validación de la descripción
+    const descripcion = form.querySelector('#descripcion');
+    if (descripcion && descripcion.value && descripcion.value.length > 500) {
+        descripcion.style.borderColor = '#ef4444';
+        alert('La descripción no puede exceder 500 caracteres');
+        valido = false;
+    }
+    
+    return valido;
+}
+
+// Funcionalidad del modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modalGrupo = document.getElementById('modalGrupo');
+            if (modalGrupo && modalGrupo.style.display === 'block') {
+                cerrarModalGrupo();
+            }
+        }
+    });
+    
+    // Cerrar modal haciendo clic fuera
+    const modalGrupo = document.getElementById('modalGrupo');
+    if (modalGrupo) {
+        modalGrupo.addEventListener('click', function(event) {
+            if (event.target === this) {
+                cerrarModalGrupo();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.inactive-row {
+    opacity: 0.6;
+    background-color: #f9fafb;
+}
+
+.inactive-row td {
+    color: #6b7280;
+}
+</style>
+{% endblock %}

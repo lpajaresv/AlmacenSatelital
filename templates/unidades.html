@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Unidades - Almacén Satelital San Luis{% endblock %}
+
+{% block page_title %}Unidades de Medida{% endblock %}
+{% block page_subtitle %}Unidades de medida para repuestos{% endblock %}
+
+{% block content %}
+<!-- Encabezado con botón para nueva unidad -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>📏 Gestión de Unidades de Medida</h2>
+        <button onclick="abrirModalUnidad()" class="btn btn-primary">➕ Nueva Unidad</button>
+    </div>
+    
+    <p style="color: #6b7280; margin-bottom: 20px;">
+        <strong>ℹ️ Información:</strong> Las unidades de medida se utilizan para los productos del inventario. 
+        Solo las unidades activas aparecerán en los formularios de productos.
+    </p>
+</div>
+
+<!-- Modal para registrar nueva unidad -->
+<div id="modalUnidad" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📏 Registrar Nueva Unidad</h3>
+            <span class="close" onclick="cerrarModalUnidad()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formUnidad" method="post" onsubmit="return validarFormularioUnidad(this)">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label for="nombre">Nombre Completo</label>
+                        <input type="text" id="nombre" name="nombre" class="form-control" required 
+                               placeholder="ej: Kilogramo" maxlength="50">
+                        <small style="color: #6b7280;">Nombre descriptivo de la unidad</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="abreviatura">Abreviatura</label>
+                        <input type="text" id="abreviatura" name="abreviatura" class="form-control" required 
+                               placeholder="ej: kg, KG, Kg" maxlength="10">
+                        <small style="color: #6b7280;">Identificador único que se muestra en reportes</small>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="activo" name="activo" checked>
+                        <span>Unidad activa (disponible para productos)</span>
+                    </label>
+                </div>
+                <div style="margin-top: 25px; text-align: right;">
+                    <button type="button" onclick="cerrarModalUnidad()" class="btn btn-secondary">❌ Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar Unidad</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📋 Lista de Unidades</h3>
+    {% if unidades %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Abreviatura</th>
+                    <th>Estado</th>
+                    <th>Fecha Creación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for unidad in unidades %}
+                <tr class="{% if not unidad.activo %}inactive-row{% endif %}">
+                    <td><strong>{{ unidad.nombre }}</strong></td>
+                    <td>
+                        <span class="badge badge-unidad">{{ unidad.abreviatura }}</span>
+                    </td>
+                    <td>
+                        {% if unidad.activo %}
+                        <span class="badge badge-entrada">✅ Activa</span>
+                        {% else %}
+                        <span class="badge badge-salida">❌ Inactiva</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ unidad.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <form method="post" action="/unidades/{{ unidad.id }}/toggle" style="display: inline;">
+                            {% if unidad.activo %}
+                            <button type="submit" class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px;"
+                                    onclick="return confirm('¿Desactivar esta unidad? Los productos asociados mantendrán la referencia.')">
+                                🔒 Desactivar
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success" style="padding: 5px 10px; font-size: 14px;">
+                                🔓 Activar
+                            </button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #667eea;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; text-align: center;">
+            <div>
+                <strong style="font-size: 1.5em; color: #667eea;">{{ unidades|selectattr("activo")|list|length }}</strong>
+                <br><small>Unidades Activas</small>
+            </div>
+            <div>
+                <strong style="font-size: 1.5em; color: #6b7280;">{{ unidades|rejectattr("activo")|list|length }}</strong>
+                <br><small>Unidades Inactivas</small>
+            </div>
+            <div>
+                <strong style="font-size: 1.5em; color: #059669;">{{ unidades|length }}</strong>
+                <br><small>Total Unidades</small>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #6b7280;">
+        <h3>📏 No hay unidades registradas</h3>
+        <p>Comienza creando las unidades de medida que usarás en tus productos.</p>
+        <button onclick="abrirModalUnidad()" class="btn btn-primary">➕ Crear Primera Unidad</button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Funciones para el modal de unidades
+function abrirModalUnidad() {
+    document.getElementById('modalUnidad').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    setTimeout(() => {
+        document.getElementById('nombre').focus();
+    }, 100);
+}
+
+function cerrarModalUnidad() {
+    document.getElementById('modalUnidad').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar formulario
+    document.getElementById('formUnidad').reset();
+    document.getElementById('activo').checked = true;
+}
+
+// Validación del formulario
+function validarFormularioUnidad(form) {
+    let valido = true;
+    const campos = form.querySelectorAll('input[required]');
+    
+    // Limpiar errores previos
+    campos.forEach(function(campo) {
+        campo.style.borderColor = '#e5e7eb';
+    });
+    
+    // Validar campos requeridos
+    campos.forEach(function(campo) {
+        if (!campo.value.trim()) {
+            campo.style.borderColor = '#ef4444';
+            valido = false;
+        }
+    });
+    
+    // Validar formato de la abreviatura (solo letras, números y algunos símbolos)
+    const abreviatura = form.querySelector('#abreviatura');
+    if (abreviatura && abreviatura.value && !/^[a-zA-Z0-9\-_°²³]+$/.test(abreviatura.value)) {
+        abreviatura.style.borderColor = '#ef4444';
+        alert('La abreviatura solo puede contener letras, números, guiones, guiones bajos y algunos símbolos especiales');
+        valido = false;
+    }
+    
+    return valido;
+}
+
+// Funcionalidad del modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modalUnidad = document.getElementById('modalUnidad');
+            if (modalUnidad && modalUnidad.style.display === 'block') {
+                cerrarModalUnidad();
+            }
+        }
+    });
+    
+    // Cerrar modal haciendo clic fuera
+    const modalUnidad = document.getElementById('modalUnidad');
+    if (modalUnidad) {
+        modalUnidad.addEventListener('click', function(event) {
+            if (event.target === this) {
+                cerrarModalUnidad();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.suggested-units {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.btn-suggestion {
+    background: #f8fafc;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    font-size: 14px;
+}
+
+.btn-suggestion:hover {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.inactive-row {
+    opacity: 0.6;
+    background-color: #f9fafb;
+}
+
+.badge-unidad {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.productos-count {
+    font-weight: 600;
+    color: #374151;
+    font-size: 1.1em;
+}
+</style>
+{% endblock %}

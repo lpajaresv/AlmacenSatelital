@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Movimientos - Almacén Satelital San Luis{% endblock %}
+
+{% block page_title %}Movimientos{% endblock %}
+{% block page_subtitle %}Control de entradas y salidas del almacén{% endblock %}
+
+{% block content %}
+<!-- Modal para registrar nuevo movimiento -->
+<div id="modalMovimiento" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📊 Registrar Nuevo Movimiento</h3>
+            <span class="close" onclick="cerrarModalMovimiento()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formMovimiento" method="post" onsubmit="return validarFormulario(this)">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label for="producto_id">Producto</label>
+                        <select id="producto_id" name="producto_id" class="form-control" required>
+                            <option value="">Seleccionar producto...</option>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id }}">{{ producto.codigo }} - {{ producto.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo">Tipo de Movimiento</label>
+                        <select id="tipo" name="tipo" class="form-control" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="entrada">📈 Entrada (Agregar stock)</option>
+                            <option value="salida">📉 Salida (Reducir stock)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cantidad">Cantidad</label>
+                        <input type="number" id="cantidad" name="cantidad" class="form-control" step="0.01" min="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input type="date" id="fecha" name="fecha" class="form-control" required value="{{ date.today().strftime('%Y-%m-%d') }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="descripcion">Descripción (Opcional)</label>
+                    <input type="text" id="descripcion" name="descripcion" class="form-control" placeholder="ej: Orden deCompra / Orden de Mantenimiento.  Y breve descripción del movimiento.">
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="button" onclick="cerrarModalMovimiento()" class="btn btn-secondary">❌ Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Registrar Movimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>📊 Gestión de Movimientos</h2>
+        <button onclick="abrirModalMovimiento()" class="btn btn-primary">➕ Nuevo Movimiento</button>
+    </div>
+    
+    <form method="get" class="filters">
+        <div class="filters-grid">
+            <div class="form-group">
+                <label for="fecha_inicio">Desde</label>
+                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control auto-submit" value="{{ filtros.fecha_inicio or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="fecha_fin">Hasta</label>
+                <input type="date" id="fecha_fin" name="fecha_fin" class="form-control auto-submit" value="{{ filtros.fecha_fin or '' }}">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-secondary">🔍 Filtrar</button>
+                <a href="/movimientos" class="btn btn-secondary">🔄 Limpiar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2>📊 Lista de Movimientos</h2>
+    {% if movimientos %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movimiento in movimientos %}
+                <tr>
+                    <td>{{ movimiento.fecha.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <strong>{{ movimiento.producto.codigo }}</strong><br>
+                        <small>{{ movimiento.producto.nombre if movimiento.producto else 'Producto no encontrado' }}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ movimiento.tipo }}">
+                            {% if movimiento.tipo == 'entrada' %}📈 Entrada{% else %}📉 Salida{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <strong>{{ "%.2f"|format(movimiento.cantidad) }}</strong>
+                        {% if movimiento.producto and movimiento.producto.unidad_rel %}
+                        <br><small>{{ movimiento.producto.unidad_rel.abreviatura }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ movimiento.descripcion or '-' }}</td>
+                    <td>
+                        <a href="/kardex/{{ movimiento.producto_id }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px;">
+                            📈 Ver Kardex
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No se encontraron movimientos con los filtros aplicados.</p>
+    {% if not productos %}
+    <p><strong>Nota:</strong> Primero debes <a href="/productos">registrar productos</a> para poder crear movimientos.</p>
+    {% endif %}
+    {% endif %}
+</div>
+
+<script>
+// Funciones para el modal de movimientos
+function abrirModalMovimiento() {
+    document.getElementById('modalMovimiento').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevenir scroll del fondo
+    
+    // Enfocar el primer campo y establecer fecha actual
+    setTimeout(() => {
+        document.getElementById('producto_id').focus();
+        
+        // Asegurar que la fecha esté establecida
+        const fechaInput = document.getElementById('fecha');
+        if (!fechaInput.value) {
+            fechaInput.value = new Date().toISOString().split('T')[0];
+        }
+    }, 100);
+}
+
+function cerrarModalMovimiento() {
+    document.getElementById('modalMovimiento').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restaurar scroll
+    
+    // Limpiar formulario
+    document.getElementById('formMovimiento').reset();
+    
+    // Reestablecer fecha actual
+    const fechaInput = document.getElementById('fecha');
+    fechaInput.value = new Date().toISOString().split('T')[0];
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modalMovimiento = document.getElementById('modalMovimiento');
+        if (modalMovimiento && modalMovimiento.style.display === 'block') {
+            cerrarModalMovimiento();
+        }
+    }
+});
+
+// Cerrar modal haciendo clic fuera
+document.addEventListener('DOMContentLoaded', function() {
+    const modalMovimiento = document.getElementById('modalMovimiento');
+    if (modalMovimiento) {
+        modalMovimiento.addEventListener('click', function(event) {
+            if (event.target === this) {
+                cerrarModalMovimiento();
+            }
+        });
+    }
+    
+    // Prellenar select con producto si viene de URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productoId = urlParams.get('producto_id');
+    
+    // Verificar si se debe abrir el modal automáticamente
+    if (window.location.hash === '#nuevo') {
+        if (productoId) {
+            abrirModalMovimientoConProducto(productoId);
+        } else {
+            abrirModalMovimiento();
+        }
+        // Limpiar el hash de la URL
+        history.replaceState(null, null, window.location.pathname + window.location.search);
+    } else if (productoId) {
+        // Solo prellenar el select si no se abre el modal
+        const selectProducto = document.getElementById('producto_id');
+        if (selectProducto) {
+            selectProducto.value = productoId;
+        }
+    }
+});
+
+// Función para abrir modal con producto preseleccionado
+function abrirModalMovimientoConProducto(productoId) {
+    abrirModalMovimiento();
+    setTimeout(() => {
+        const selectProducto = document.getElementById('producto_id');
+        if (selectProducto) {
+            selectProducto.value = productoId;
+            // Mover el foco al siguiente campo
+            document.getElementById('tipo').focus();
+        }
+    }, 150);
+}
+
+// Validación mejorada para el formulario de movimientos
+function validarFormularioMovimiento(form) {
+    let valido = true;
+    const campos = form.querySelectorAll('input[required], select[required]');
+    
+    // Limpiar errores previos
+    campos.forEach(function(campo) {
+        campo.style.borderColor = '#e5e7eb';
+    });
+    
+    // Validar campos requeridos
+    campos.forEach(function(campo) {
+        if (!campo.value.trim()) {
+            campo.style.borderColor = '#ef4444';
+            valido = false;
+        }
+    });
+    
+    // Validación específica para cantidad
+    const cantidad = form.querySelector('#cantidad');
+    if (cantidad && cantidad.value && parseFloat(cantidad.value) <= 0) {
+        cantidad.style.borderColor = '#ef4444';
+        alert('La cantidad debe ser mayor a 0');
+        valido = false;
+    }
+    
+    // Validación de fecha
+    const fecha = form.querySelector('#fecha');
+    if (fecha && fecha.value) {
+        const fechaSeleccionada = new Date(fecha.value);
+        const fechaActual = new Date();
+        const diferenciaDias = (fechaActual - fechaSeleccionada) / (1000 * 60 * 60 * 24);
+        
+        if (diferenciaDias > 365) {
+            if (!confirm('La fecha seleccionada es de hace más de un año. ¿Está seguro de continuar?')) {
+                valido = false;
+            }
+        }
+    }
+    
+    return valido;
+}
+
+// Reemplazar la función validarFormulario original para movimientos
+document.addEventListener('DOMContentLoaded', function() {
+    const formMovimiento = document.getElementById('formMovimiento');
+    if (formMovimiento) {
+        formMovimiento.addEventListener('submit', function(event) {
+            if (!validarFormularioMovimiento(this)) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

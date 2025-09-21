@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}Productos - Almacén Satelital San Luis{% endblock %}
+
+{% block page_title %}Productos{% endblock %}
+{% block page_subtitle %}Catálogo de repuestos y equipos{% endblock %}
+
+{% block content %}
+<!-- Encabezado con botón para nuevo producto -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>📋 Gestión de Productos</h2>
+        <button onclick="abrirModalProducto()" class="btn btn-primary">➕ Nuevo Producto</button>
+    </div>
+    
+    <!-- Buscador de productos -->
+    <div class="form-group">
+        <label for="buscarProducto">🔍 Buscar Productos</label>
+        <input type="text" id="buscarProducto" class="form-control" placeholder="Buscar por código o nombre..." onkeyup="filtrarProductos()">
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="incluirInactivos" onchange="toggleIncluirInactivos()" {% if incluir_inactivos %}checked{% endif %}>
+            <label for="incluirInactivos" style="margin: 0; cursor: pointer; color: #6b7280; font-size: 0.9em;">
+                👁️ Incluir productos inactivos
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para registrar nuevo producto -->
+<div id="modalProducto" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="tituloModal">➕ Registrar Nuevo Producto</h3>
+            <span class="close" onclick="cerrarModalProducto()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="formProducto" method="post" onsubmit="return validarFormulario(this)">
+                <input type="hidden" id="producto_id" name="producto_id" value="">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label for="codigo">Código del Producto</label>
+                        <input type="text" id="codigo" name="codigo" class="form-control" required placeholder="ej: 1R-1804">
+                    </div>
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Producto</label>
+                        <input type="text" id="nombre" name="nombre" class="form-control" required placeholder="ej: Filtro de Aceite Motor 320">
+                    </div>
+                    <div class="form-group">
+                        <label for="unidad_id">Unidad de Medida</label>
+                        <select id="unidad_id" name="unidad_id" class="form-control" required>
+                            <option value="">Seleccionar unidad...</option>
+                            {% for unidad in unidades %}
+                            <option value="{{ unidad.id }}">{{ unidad.nombre }} ({{ unidad.abreviatura }})</option>
+                            {% endfor %}
+                        </select>
+                        {% if not unidades %}
+                        <small style="color: #dc2626;">
+                            ⚠️ No hay unidades disponibles. <a href="/unidades" target="_blank">Crear unidades</a> primero.
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="grupo_id">Grupo/Categoría</label>
+                        <select id="grupo_id" name="grupo_id" class="form-control" required>
+                            <option value="">Seleccionar grupo...</option>
+                            {% for grupo in grupos %}
+                            <option value="{{ grupo.id }}">{{ grupo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if not grupos %}
+                        <small style="color: #dc2626;">
+                            ⚠️ No hay grupos disponibles. <a href="/grupos" target="_blank">Crear grupos</a> primero.
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="stock_minimo">Stock Mínimo</label>
+                        <input type="number" id="stock_minimo" name="stock_minimo" class="form-control" min="0" step="0.01" value="0" placeholder="ej: 10">
+                        <small style="color: #6b7280;">Cantidad mínima recomendada en inventario</small>
+                    </div>
+                    <div class="form-group" id="campo_activo" style="display: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <input type="hidden" name="activo" value="false">
+                            <input type="checkbox" id="activo" name="activo" value="true" checked>
+                            <label for="activo" style="margin: 0; cursor: pointer;">✅ Producto activo</label>
+                        </div>
+                        <small style="color: #6b7280; display: block; margin-top: 5px;">Los productos inactivos no aparecen en nuevos movimientos</small>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="button" onclick="cerrarModalProducto()" class="btn btn-secondary">❌ Cancelar</button>
+                    <button type="submit" id="btnGuardar" class="btn btn-primary">💾 Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📋 Lista de Productos</h2>
+    {% if productos_con_stock %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Grupo</th>
+                    <th>Stock Actual</th>
+                    <th>Unidad</th>
+                    <th>Stock Mínimo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in productos_con_stock %}
+                <tr {% if not item.producto.activo %}style="background-color: #f9fafb; opacity: 0.7;"{% endif %}>
+                    <td><strong>{{ item.producto.codigo }}</strong>{% if not item.producto.activo %} <small style="color: #dc2626;">(Inactivo)</small>{% endif %}</td>
+                    <td>{{ item.producto.nombre }}</td>
+                    <td>{{ item.producto.grupo_rel.nombre if item.producto.grupo_rel else 'Sin grupo' }}</td>
+                    <td>
+                        <span class="{% if item.stock_actual > 0 %}saldo-positivo{% elif item.stock_actual < 0 %}saldo-negativo{% else %}saldo-cero{% endif %}">
+                            {{ "%.2f"|format(item.stock_actual) }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-unidad">{{ item.producto.unidad_rel.abreviatura }}</span>
+                    </td>
+                    <td>
+                        <span style="color: {% if item.stock_actual <= (item.producto.stock_minimo or 0) and (item.producto.stock_minimo or 0) > 0 %}#dc2626{% else %}#6b7280{% endif %};">
+                            {{ "%.2f"|format(item.producto.stock_minimo or 0) }}
+                        </span>
+                        {% if item.stock_actual <= (item.producto.stock_minimo or 0) and (item.producto.stock_minimo or 0) > 0 %}
+                        <br><small style="color: #dc2626;">⚠️ Stock bajo</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="editarProducto({{ item.producto.id }}, '{{ item.producto.codigo }}', '{{ item.producto.nombre }}', {{ item.producto.unidad_id }}, {{ item.producto.grupo_id }}, {{ item.producto.stock_minimo or 0 }}, {{ item.producto.activo|lower }})" 
+                                    class="btn btn-edit">
+                                ✏️ Editar
+                            </button>
+                            <a href="/kardex/{{ item.producto.id }}" class="btn btn-secondary">
+                                📈 Ver Kardex
+                            </a>
+                            <button onclick="window.location.href='/movimientos?producto_id={{ item.producto.id }}#nuevo'" class="btn btn-success">
+                                ➕ Nuevo Mov.
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No hay productos registrados aún.</p>
+    <p>Comienza registrando tu primer producto usando el formulario de arriba.</p>
+    {% endif %}
+</div>
+
+<script>
+// Función para filtrar la tabla de productos mejorada
+function filtrarProductos() {
+    const input = document.getElementById('buscarProducto');
+    const filtro = input.value.toLowerCase().trim();
+    const tabla = document.querySelector('.table tbody');
+    
+    if (!tabla) return;
+    
+    const filas = tabla.querySelectorAll('tr');
+    let productosVisibles = 0;
+    
+    filas.forEach(function(fila) {
+        const codigo = fila.cells[0].textContent.toLowerCase();
+        const nombre = fila.cells[1].textContent.toLowerCase();
+        
+        // Buscar en código o nombre
+        if (codigo.includes(filtro) || nombre.includes(filtro)) {
+            fila.style.display = '';
+            productosVisibles++;
+        } else {
+            fila.style.display = 'none';
+        }
+    });
+    
+    // Mostrar mensaje si no hay resultados
+    mostrarMensajeFiltro(productosVisibles, filtro);
+}
+
+function mostrarMensajeFiltro(productosVisibles, filtro) {
+    // Remover mensaje anterior si existe
+    const mensajeAnterior = document.getElementById('mensajeFiltro');
+    if (mensajeAnterior) {
+        mensajeAnterior.remove();
+    }
+    
+    if (filtro && productosVisibles === 0) {
+        const tabla = document.querySelector('.table-container');
+        const mensaje = document.createElement('div');
+        mensaje.id = 'mensajeFiltro';
+        mensaje.style.padding = '20px';
+        mensaje.style.textAlign = 'center';
+        mensaje.style.color = '#6b7280';
+        mensaje.innerHTML = `
+            <div style="padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px dashed #d1d5db;">
+                🔍 No se encontraron productos que coincidan con "<strong>${filtro}</strong>"
+                <br><small>Intenta con otro término de búsqueda</small>
+            </div>
+        `;
+        tabla.appendChild(mensaje);
+    }
+}
+
+// Funciones para el modal
+function abrirModalProducto() {
+    // Resetear modal para nuevo producto
+    document.getElementById('tituloModal').textContent = '➕ Registrar Nuevo Producto';
+    document.getElementById('btnGuardar').textContent = '💾 Guardar Producto';
+    document.getElementById('formProducto').action = '/productos';
+    document.getElementById('producto_id').value = '';
+    
+    // Ocultar campo activo para productos nuevos (siempre se crean activos)
+    document.getElementById('campo_activo').style.display = 'none';
+    
+    document.getElementById('modalProducto').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    setTimeout(() => {
+        document.getElementById('codigo').focus();
+    }, 100);
+}
+
+function editarProducto(id, codigo, nombre, unidad_id, grupo_id, stock_minimo, activo) {
+    // Configurar modal para edición
+    document.getElementById('tituloModal').textContent = '✏️ Editar Producto';
+    document.getElementById('btnGuardar').textContent = '💾 Actualizar Producto';
+    document.getElementById('formProducto').action = `/productos/${id}/edit`;
+    document.getElementById('producto_id').value = id;
+    
+    // Llenar campos con datos existentes
+    document.getElementById('codigo').value = codigo;
+    document.getElementById('nombre').value = nombre;
+    document.getElementById('unidad_id').value = unidad_id;
+    document.getElementById('grupo_id').value = grupo_id;
+    document.getElementById('stock_minimo').value = stock_minimo || 0;
+    document.getElementById('activo').checked = activo;
+    
+    // Mostrar campo activo solo en edición
+    document.getElementById('campo_activo').style.display = 'block';
+    
+    // Abrir modal
+    document.getElementById('modalProducto').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    setTimeout(() => {
+        document.getElementById('codigo').focus();
+        document.getElementById('codigo').select();
+    }, 100);
+}
+
+function cerrarModalProducto() {
+    document.getElementById('modalProducto').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar formulario
+    document.getElementById('formProducto').reset();
+    document.getElementById('producto_id').value = '';
+    document.getElementById('stock_minimo').value = '0';
+    
+    // Ocultar campo activo
+    document.getElementById('campo_activo').style.display = 'none';
+    
+    // Resetear acción del formulario
+    document.getElementById('formProducto').action = '/productos';
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        cerrarModalProducto();
+    }
+});
+
+// Cerrar modal haciendo clic fuera
+document.getElementById('modalProducto').addEventListener('click', function(event) {
+    if (event.target === this) {
+        cerrarModalProducto();
+    }
+});
+
+// Limpiar filtro con botón
+function limpiarFiltro() {
+    document.getElementById('buscarProducto').value = '';
+    filtrarProductos();
+}
+
+// Función para toggle incluir inactivos
+function toggleIncluirInactivos() {
+    const checkbox = document.getElementById('incluirInactivos');
+    const incluirInactivos = checkbox.checked;
+    
+    // Recargar la página con el parámetro
+    const url = new URL(window.location);
+    if (incluirInactivos) {
+        url.searchParams.set('incluir_inactivos', 'true');
+    } else {
+        url.searchParams.delete('incluir_inactivos');
+    }
+    
+    window.location.href = url.toString();
+}
+
+// Auto-focus en el buscador al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    const buscador = document.getElementById('buscarProducto');
+    if (buscador) {
+        // Agregar botón de limpiar al buscador
+        const container = buscador.parentElement;
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.innerHTML = '❌';
+        clearBtn.className = 'btn btn-secondary';
+        clearBtn.style.position = 'absolute';
+        clearBtn.style.right = '10px';
+        clearBtn.style.top = '50%';
+        clearBtn.style.transform = 'translateY(-50%)';
+        clearBtn.style.padding = '5px 8px';
+        clearBtn.style.fontSize = '12px';
+        clearBtn.onclick = limpiarFiltro;
+        
+        container.style.position = 'relative';
+        container.appendChild(clearBtn);
+        
+        // Mostrar/ocultar botón según el contenido
+        buscador.addEventListener('input', function() {
+            clearBtn.style.display = this.value ? 'block' : 'none';
+        });
+    }
+});
+
+// Función para validar formularios con validaciones adicionales
+function validarFormulario(form) {
+    let valido = true;
+    const campos = form.querySelectorAll('input[required], select[required]');
+    
+    // Limpiar errores previos
+    campos.forEach(function(campo) {
+        campo.style.borderColor = '#e5e7eb';
+    });
+    
+    // Validar campos requeridos
+    campos.forEach(function(campo) {
+        if (!campo.value.trim()) {
+            campo.style.borderColor = '#ef4444';
+            valido = false;
+        }
+    });
+    
+    // Validación específica del código
+    const codigo = form.querySelector('#codigo');
+    if (codigo && codigo.value) {
+        // Verificar formato del código (solo letras, números, guiones y guiones bajos)
+        if (!/^[A-Za-z0-9\-_]+$/.test(codigo.value)) {
+            codigo.style.borderColor = '#ef4444';
+            alert('El código solo puede contener letras, números, guiones y guiones bajos');
+            valido = false;
+        }
+        
+        // Verificar longitud
+        if (codigo.value.length < 2 || codigo.value.length > 50) {
+            codigo.style.borderColor = '#ef4444';
+            alert('El código debe tener entre 2 y 50 caracteres');
+            valido = false;
+        }
+    }
+    
+    // Validación del nombre
+    const nombre = form.querySelector('#nombre');
+    if (nombre && nombre.value && nombre.value.length > 200) {
+        nombre.style.borderColor = '#ef4444';
+        alert('El nombre no puede exceder 200 caracteres');
+        valido = false;
+    }
+    
+    // Validación del grupo
+    const grupo = form.querySelector('#grupo');
+    if (grupo && grupo.value && grupo.value.length > 100) {
+        grupo.style.borderColor = '#ef4444';
+        alert('El grupo no puede exceder 100 caracteres');
+        valido = false;
+    }
+    
+    // Validación del stock mínimo
+    const stockMinimo = form.querySelector('#stock_minimo');
+    if (stockMinimo && stockMinimo.value) {
+        const valor = parseFloat(stockMinimo.value);
+        if (isNaN(valor) || valor < 0) {
+            stockMinimo.style.borderColor = '#ef4444';
+            alert('El stock mínimo debe ser un número positivo');
+            valido = false;
+        }
+        if (valor > 9999999) {
+            stockMinimo.style.borderColor = '#ef4444';
+            alert('El stock mínimo no puede exceder 9,999,999');
+            valido = false;
+        }
+    }
+    
+    return valido;
+}
+
+// Confirmación antes de editar
+function confirmarEdicion() {
+    return confirm('¿Estás seguro de que deseas actualizar este producto?');
+}
+</script>
+{% endblock %}

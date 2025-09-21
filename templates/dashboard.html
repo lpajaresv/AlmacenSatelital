@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Almacén Satelital San Luis{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Control y gestión del almacén satelital{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>{{ total_productos }}</h3>
+        <p>Productos Registrados</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ "%.0f"|format(stock_total) }}</h3>
+        <p>Unidades en Stock</p>
+    </div>
+    <div class="stat-card {% if productos_stock_bajo %}stock-bajo{% else %}stock-ok{% endif %}">
+        <h3>{{ productos_stock_bajo|length }}</h3>
+        <p>{% if productos_stock_bajo %}⚠️ Stock Bajo{% else %}✅ Stock OK{% endif %}</p>
+    </div>
+</div>
+
+{% if productos_stock_bajo %}
+<div class="card" style="background: #fef2f2; border-left: 4px solid #dc2626;">
+    <h2 style="color: #dc2626;">⚠️ Productos con Stock Bajo</h2>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Producto</th>
+                    <th>Stock Actual</th>
+                    <th>Stock Mínimo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in productos_stock_bajo %}
+                <tr style="background: #fff5f5;">
+                    <td><strong>{{ item.producto.codigo }}</strong></td>
+                    <td>{{ item.producto.nombre }}</td>
+                    <td>
+                        <span style="color: #dc2626; font-weight: bold;">
+                            {{ "%.2f"|format(item.stock_actual) }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="color: #6b7280;">
+                            {{ "%.2f"|format(item.stock_minimo) }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="/movimientos?producto_id={{ item.producto.id }}#nuevo" class="btn btn-success" style="padding: 5px 10px; font-size: 14px;">
+                            ➕ Reabastecer
+                        </a>
+                        <a href="/kardex/{{ item.producto.id }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px;">
+                            📈 Ver Kardex
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>📊 Movimientos Recientes</h2>
+    {% if movimientos_recientes %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movimiento in movimientos_recientes %}
+                <tr>
+                    <td>{{ movimiento.fecha.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ movimiento.producto.codigo if movimiento.producto else 'Producto no encontrado' }}</td>
+                    <td>
+                        <span class="badge badge-{{ movimiento.tipo }}">
+                            {% if movimiento.tipo == 'entrada' %}📈 Entrada{% else %}📉 Salida{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ "%.2f"|format(movimiento.cantidad) }}</td>
+                    <td>{{ movimiento.descripcion or '-' }}</td>
+                    <td>
+                        <a href="/kardex/{{ movimiento.producto_id }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px;">
+                            Ver Kardex
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No hay movimientos registrados aún.</p>
+    <a href="/movimientos" class="btn btn-primary">Registrar Primer Movimiento</a>
+    {% endif %}
+</div>
+{% endblock %}

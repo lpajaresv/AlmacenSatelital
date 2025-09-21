@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Kardex {{ producto.codigo }} - Almacén Satelital San Luis{% endblock %}
+
+{% block page_title %}Kardex - {{ producto.codigo }}{% endblock %}
+{% block page_subtitle %}Historial de movimientos - Almacén Satelital{% endblock %}
+
+{% block content %}
+<div class="kardex-header">
+    {% set stock_final = kardex[0].saldo if kardex else 0 %}
+    <h2>📈 Kardex: {{ producto.codigo }} | Stock: <span class="{% if stock_final > 0 %}kardex-saldo-positivo{% elif stock_final < 0 %}kardex-saldo-negativo{% else %}kardex-saldo-cero{% endif %}">{{ "%.2f"|format(stock_final) }} {{ producto.unidad_rel.abreviatura }}</span></h2>
+    <p><strong>{{ producto.nombre }}</strong> | Grupo: {{ producto.grupo_rel.nombre if producto.grupo_rel else 'Sin grupo' }}</p>
+</div>
+
+<div class="card">
+    <h3>🔍 Filtrar por Fechas</h3>
+    <form method="get" class="filters">
+        <div class="filters-grid">
+            <div class="form-group">
+                <label for="fecha_inicio">Desde</label>
+                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" value="{{ filtros.fecha_inicio or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="fecha_fin">Hasta</label>
+                <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" value="{{ filtros.fecha_fin or '' }}">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-secondary">🔍 Filtrar</button>
+                <a href="/kardex/{{ producto.id }}" class="btn btn-secondary">🔄 Ver Todo</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3>📊 Historial de Movimientos</h3>
+    {% if kardex %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Descripción</th>
+                    <th>Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in kardex %}
+                <tr>
+                    <td>{{ item.movimiento.fecha.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <span class="badge badge-{{ item.movimiento.tipo }}">
+                            {% if item.movimiento.tipo == 'entrada' %}📈 Entrada{% else %}📉 Salida{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.movimiento.tipo == 'entrada' %}
+                        <span style="color: #059669;">+{{ "%.2f"|format(item.movimiento.cantidad) }}</span>
+                        {% else %}
+                        <span style="color: #dc2626;">-{{ "%.2f"|format(item.movimiento.cantidad) }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.movimiento.descripcion or '-' }}</td>
+                    <td>
+                        <strong class="{% if item.saldo > 0 %}saldo-positivo{% elif item.saldo < 0 %}saldo-negativo{% else %}saldo-cero{% endif %}">
+                            {{ "%.2f"|format(item.saldo) }} {{ producto.unidad_rel.abreviatura }}
+                        </strong>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No hay movimientos registrados para este producto{% if filtros.fecha_inicio or filtros.fecha_fin %} en el rango de fechas seleccionado{% endif %}.</p>
+    <a href="/movimientos" class="btn btn-primary">📊 Registrar Primer Movimiento</a>
+    {% endif %}
+</div>
+
+{% endblock %}
