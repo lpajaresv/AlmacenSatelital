@@ -59,15 +59,15 @@ def crear_usuarios_ejemplo():
     try:
         usuarios_ejemplo = [
             {
-                "username": "operador1",
-                "email": "operador1@almacensatelital.com",
-                "nombre_completo": "Juan Pérez",
+                "username": "hpajares",
+                "email": "hector.pajares@caralmaq.pe",
+                "nombre_completo": "Héctor Pajares",
                 "rol": RolUsuario.OPERADOR.value
             },
             {
-                "username": "consulta1",
-                "email": "consulta1@almacensatelital.com",
-                "nombre_completo": "María García",
+                "username": "equispe",
+                "email": "edgar.quispe@caralmaq.pe",
+                "nombre_completo": "Edgar Quispe",
                 "rol": RolUsuario.CONSULTA.value
             }
         ]
