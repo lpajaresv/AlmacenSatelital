@@ -1,6 +1,54 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import date, datetime
 from typing import Optional
+from enum import Enum
+
+class RolUsuario(str, Enum):
+    ADMIN = "admin"
+    OPERADOR = "operador"
+    CONSULTA = "consulta"
+
+# Schemas para Usuarios
+class UsuarioBase(BaseModel):
+    username: str
+    email: EmailStr
+    nombre_completo: str
+    rol: RolUsuario = RolUsuario.CONSULTA
+    activo: bool = True
+
+class UsuarioCreate(UsuarioBase):
+    password: str
+
+class UsuarioUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    nombre_completo: Optional[str] = None
+    rol: Optional[RolUsuario] = None
+    activo: Optional[bool] = None
+
+class UsuarioChangePassword(BaseModel):
+    password_actual: str
+    password_nueva: str
+
+class Usuario(UsuarioBase):
+    id: int
+    fecha_creacion: datetime
+    ultimo_acceso: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+# Schemas para Autenticación
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
 
 class GrupoBase(BaseModel):
     nombre: str

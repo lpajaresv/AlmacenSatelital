@@ -41,6 +41,8 @@ body {
     overflow-y: auto;
     z-index: 1000;
     box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar-header {
@@ -89,6 +91,7 @@ body {
 .sidebar-menu {
     list-style: none;
     padding: 0 15px;
+    flex: 1;
 }
 
 .sidebar-menu li {
@@ -743,5 +746,133 @@ body {
         min-width: 120px;
         text-align: center;
         justify-content: center;
+    }
+}
+
+/* Estilos para información del usuario en sidebar */
+.sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--orange-web);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--white);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 12px;
+    color: var(--platinum);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.user-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.user-actions .btn {
+    flex: 1;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.user-actions .btn-outline-light {
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.user-actions .btn-outline-light:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.user-actions .btn-outline-danger {
+    color: #ff6b6b;
+    border: 1px solid rgba(255,107,107,0.3);
+}
+
+.user-actions .btn-outline-danger:hover {
+    background: rgba(255,107,107,0.1);
+    border-color: rgba(255,107,107,0.5);
+}
+
+/* Responsive para información del usuario */
+@media (max-width: 768px) {
+    .sidebar-footer {
+        padding: 15px;
+    }
+    
+    .user-info {
+        padding: 8px;
+    }
+    
+    .user-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+        margin-right: 10px;
+    }
+    
+    .user-name {
+        font-size: 13px;
+    }
+    
+    .user-role {
+        font-size: 11px;
+    }
+    
+    .user-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .user-actions .btn {
+        font-size: 11px;
+        padding: 5px 10px;
     }
 }

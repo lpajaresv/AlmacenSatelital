@@ -2,6 +2,28 @@ from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKe
 from sqlalchemy.orm import relationship
 from datetime import datetime, date
 from database import Base
+import enum
+
+class RolUsuario(enum.Enum):
+    ADMIN = "admin"
+    OPERADOR = "operador"
+    CONSULTA = "consulta"
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+    nombre_completo = Column(String(100), nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    rol = Column(String(20), nullable=False, default=RolUsuario.CONSULTA.value)
+    activo = Column(Boolean, default=True, nullable=False)
+    fecha_creacion = Column(DateTime, default=datetime.now)
+    ultimo_acceso = Column(DateTime, nullable=True)
+    
+    def __repr__(self):
+        return f"<Usuario(username='{self.username}', rol='{self.rol}')>"
 
 class Grupo(Base):
     __tablename__ = "grupos"

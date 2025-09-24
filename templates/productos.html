@@ -10,7 +10,9 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>📋 Gestión de Productos</h2>
+        {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
         <button onclick="abrirModalProducto()" class="btn btn-primary">➕ Nuevo Producto</button>
+        {% endif %}
     </div>
     
     <!-- Buscador de productos -->
@@ -136,16 +138,20 @@
                     </td>
                     <td>
                         <div class="action-buttons">
+                            {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
                             <button onclick="editarProducto({{ item.producto.id }}, '{{ item.producto.codigo }}', '{{ item.producto.nombre }}', {{ item.producto.unidad_id }}, {{ item.producto.grupo_id }}, {{ item.producto.stock_minimo or 0 }}, {{ item.producto.activo|lower }})" 
                                     class="btn btn-edit">
                                 ✏️ Editar
                             </button>
+                            {% endif %}
                             <a href="/kardex/{{ item.producto.id }}" class="btn btn-secondary">
                                 📈 Ver Kardex
                             </a>
+                            {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
                             <button onclick="window.location.href='/movimientos?producto_id={{ item.producto.id }}#nuevo'" class="btn btn-success">
                                 ➕ Nuevo Mov.
                             </button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

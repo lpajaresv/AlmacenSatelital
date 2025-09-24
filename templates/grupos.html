@@ -10,7 +10,9 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>🏷️ Gestión de Grupos</h2>
+        {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
         <button onclick="abrirModalGrupo()" class="btn btn-primary">➕ Nuevo Grupo</button>
+        {% endif %}
     </div>
 </div>
 
@@ -80,6 +82,7 @@
                     </td>
                     <td>{{ grupo.fecha_creacion.strftime('%d/%m/%Y') }}</td>
                     <td>
+                        {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
                         <form method="post" action="/grupos/{{ grupo.id }}/toggle" style="display: inline;">
                             {% if grupo.activo %}
                             <button type="submit" class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px;"
@@ -92,6 +95,9 @@
                             </button>
                             {% endif %}
                         </form>
+                        {% else %}
+                        <span class="text-muted">Solo lectura</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

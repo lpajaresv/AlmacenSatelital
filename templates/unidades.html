@@ -10,7 +10,9 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>📏 Gestión de Unidades de Medida</h2>
+        {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
         <button onclick="abrirModalUnidad()" class="btn btn-primary">➕ Nueva Unidad</button>
+        {% endif %}
     </div>
     
     <p style="color: #6b7280; margin-bottom: 20px;">
@@ -87,6 +89,7 @@
                     </td>
                     <td>{{ unidad.fecha_creacion.strftime('%d/%m/%Y') }}</td>
                     <td>
+                        {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
                         <form method="post" action="/unidades/{{ unidad.id }}/toggle" style="display: inline;">
                             {% if unidad.activo %}
                             <button type="submit" class="btn btn-secondary" style="padding: 5px 10px; font-size: 14px;"
@@ -99,6 +102,9 @@
                             </button>
                             {% endif %}
                         </form>
+                        {% else %}
+                        <span class="text-muted">Solo lectura</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

@@ -58,7 +58,9 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>📊 Gestión de Movimientos</h2>
+        {% if request.state.current_user and request.state.current_user.rol in ['admin', 'operador'] %}
         <button onclick="abrirModalMovimiento()" class="btn btn-primary">➕ Nuevo Movimiento</button>
+        {% endif %}
     </div>
     
     <form method="get" class="filters">
